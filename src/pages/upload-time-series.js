@@ -1,131 +1,69 @@
-import { Button, Fab, TextField } from "@material-ui/core";
+import { Fab } from "@material-ui/core";
+import { TailSpin } from "react-loader-spinner";
 import React, { useState } from "react";
-import { Box, BoxItens, Graphs, SubTitle, Title } from "./upload-time-series.style";
-import AddIcon from "@material-ui/icons/Add"
-import Update from "@material-ui/icons/Update"
+import {
+    Box,
+    BoxItens,
+    Graphs,
+    SubTitle,
+    Title,
+} from "./upload-time-series.style";
+import AddIcon from "@material-ui/icons/Add";
+import Update from "@material-ui/icons/Update";
 import ReactEcharts from "echarts-for-react";
 import DenseTable from "../components/table/table";
 import api from "../api/api";
-import { Field, Form, Formik } from 'formik';
+import { Form, Formik } from "formik";
 
 const UploadTimeSeries = () => {
-
     const [showGraphs, setShowGraphs] = useState(false);
-
-    const [timeSeries, setTimeSeries] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [datess, setDates] = useState([]);
+    const [serie1, setSerie1] = useState([]);
+    const [serie2, setSerie2] = useState([]);
+    const [serie3, setSerie3] = useState([]);
+    const [name, setName] = useState([]);
 
     const initialValues = {
-        file: null
-    }
+        file: null,
+    };
 
     const handleSubmit = async (data) => {
-        console.log(data.file);
+        const formData = new FormData();
+        formData.append("file", data.file);
+        setLoading(true);
         try {
-            timeSeries = await api.post("/process-csv-file", data.file.File);
-        } catch (e) {
+            const response = await api.post("/process-csv-file", formData);
+            const response2 = await api.post("/get-name-file", formData);
+            dataForChart(response.data, response2.data);
+            setShowGraphs(true);
+            setLoading(false);
+        } catch (e) { }
+    };
 
-        }
-    }
-
-    const dates = [
-        {
-            "value": "15/12/2021"
-        },
-        {
-            "value": "15/12/2021"
-        },
-        {
-            "value": "15/12/2021"
-        },
-        {
-            "value": "15/12/2021"
-        },
-        {
-            "value": "15/12/2021"
-        },
-        {
-            "value": "15/12/2021"
-        },
-        {
-            "value": "15/12/2021"
-        },
-        {
-            "value": "15/12/2021"
-        },
-        {
-            "value": "15/12/2021"
-        }
-    ]
-    const infected = [
-        {
-            "value": 600.58
-        },
-        {
-            "value": 1100.58
-        },
-        {
-            "value": 1200.58
-        },
-        {
-            "value": 1300.58
-        },
-        {
-            "value": 1400.58
-        },
-        {
-            "value": 1500.58
-        },
-        {
-            "value": 1500.58
-        },
-        {
-            "value": 1600.58
-        },
-        {
-            "value": 1800
-        }
-    ];
-    const dead = [
-        {
-            "value": 620.58
-        },
-        {
-            "value": 1150.58
-        },
-        {
-            "value": 1250.58
-        },
-        {
-            "value": 1350.58
-        },
-        {
-            "value": 1450.58
-        },
-        {
-            "value": 1550.58
-        },
-        {
-            "value": 1550.58
-        },
-        {
-            "value": 1650.58
-        },
-        {
-            "value": 1850
-        }
-    ];
+    const dataForChart = (data, data2) => {
+        data.map(
+            (e) => (
+                setDates((prevArray) => [...prevArray, e.date]),
+                setSerie1((prevArray) => [...prevArray, e.serie1]),
+                setSerie2((prevArray) => [...prevArray, e.serie2]),
+                setSerie3((prevArray) => [...prevArray, e.serie3])
+            )
+        );
+        setName(data2);
+    };
 
     const data = {
         tooltip: {
             trigger: "axis",
             axisPointer: {
                 label: {
-                    backgroundColor: "#6a7985"
-                }
-            }
+                    backgroundColor: "#6a7985",
+                },
+            },
         },
         legend: {
-            data: ["Infected", "Dead"]
+            data: [name[1], name[2], name[3]],
         },
         dataZoom: [
             {
@@ -141,131 +79,148 @@ const UploadTimeSeries = () => {
                     shadowBlur: 6,
                     shadowOffsetX: 1,
                     shadowOffsetY: 2,
-                    shadowColor: "#aaa"
-                }
+                    shadowColor: "#aaa",
+                },
             },
             {
-                type: "inside"
-            }
+                type: "inside",
+            },
         ],
         grid: {
             left: "3%",
             right: "4%",
             bottom: "3%",
-            containLabel: true
+            containLabel: true,
         },
         xAxis: {
             type: "category",
-            data: dates,
+            data: datess,
             show: true,
             axisLabel: {
                 color: "gray",
                 fontWeight: "bold",
                 rotate: 90,
-                interval: 6
-            }
+                interval: 6,
+            },
         },
         yAxis: {
             type: "value",
             axisLabel: {
                 color: "gray",
-                inside: true
-            }
+                inside: true,
+            },
         },
         series: [
             {
-                name: "Infected",
+                name: name[1],
                 type: "line",
                 smooth: true,
-                data: infected,
+                data: serie1,
                 symbol: "none",
-                color: "#0000ff"
+                color: "#0000ff",
             },
             {
-                name: "Dead",
+                name: name[2],
                 type: "line",
                 smooth: true,
-                data: dead,
+                data: serie2,
                 symbol: "none",
-                color: "#FF4500"
-            }
-        ]
+                color: "#FF4500",
+            },
+
+            {
+                name: name[3],
+                type: "line",
+                smooth: true,
+                data: serie3,
+                symbol: "none",
+                color: "#f7d917",
+            },
+        ],
     };
 
     return (
-
         <Box>
-            {!showGraphs &&
-                <Formik
-                    initialValues={initialValues}
-                    onSubmit={handleSubmit}
-
-                >
+            {!showGraphs && (
+                <Formik initialValues={initialValues} onSubmit={handleSubmit}>
                     {({ submitForm, isSubmitting, setFieldValue }) => (
                         <Form>
                             <label htmlFor="file_input">
                                 <BoxItens>
                                     <Title>Bem vindo ao analisador de séries temporais.</Title>
-                                    <SubTitle>Por favor, escolha um arquivo .csv para ser analisado.</SubTitle>
+                                    <SubTitle>
+                                        Por favor, escolha um arquivo .csv para ser analisado.
+                                    </SubTitle>
                                     <input
                                         id="file_input"
                                         name="file"
                                         type="file"
                                         style={{ display: "none" }}
                                         onChange={(event) => {
-                                            setFieldValue('file', event.currentTarget.files[0]);
+                                            setFieldValue("file", event.currentTarget.files[0]);
                                             submitForm();
                                         }}
                                         multiple
                                     />
-                                    <Fab variant="extended" component="span" size="small" style={{ textTransform: "none", background: "#3B2659", color: "#fff" }}>
+                                    <Fab
+                                        variant="extended"
+                                        component="span"
+                                        size="small"
+                                        style={{
+                                            textTransform: "none",
+                                            background: "#3B2659",
+                                            color: "#fff",
+                                        }}
+                                    >
                                         <AddIcon style={{ marginRight: "5px", color: "#fff" }} />
                                         Carregar arquivo .csv
                                     </Fab>
                                 </BoxItens>
-
                             </label>
                         </Form>
                     )}
-
-
                 </Formik>
-
-
-            }
-            <button onClick={() => setShowGraphs(true)}> oi</button>
-            {
-                showGraphs &&
-                <Graphs>
-                    <Title>Gráfico das séries temporais analisadas</Title>
-                    <ReactEcharts
-                        style={{
-                            height: "400px",
-                            width: "70%",
-                            marginBottom: "50px"
-                        }}
-                        option={data}
-                    />
-                    <Title>Valores máximo e mínimo de cada série</Title>
-                    <DenseTable />
-                    <Fab
-                        variant="extended"
-                        component="span"
-                        size="small"
-                        style={{ textTransform: "none", background: "#3B2659", color: "#fff", marginTop: "30px" }}
-                        onClick={() => setShowGraphs(false)}>
-
-                        <Update style={{ marginRight: "5px", color: "#fff" }} />
-                        Carregar novo arquivo .csv
-                    </Fab>
-                </Graphs>
-
-
-            }
-
-        </Box >
-
+            )}
+            {loading ? (
+                <div style={{ marginTop: "40px" }}>
+                    <TailSpin color="#3B2659" height={80} width={80} />
+                </div>
+            ) : (
+                <>
+                    {showGraphs && (
+                        <Graphs>
+                            <Title>Gráfico das séries temporais analisadas</Title>
+                            <ReactEcharts
+                                style={{
+                                    height: "400px",
+                                    width: "70%",
+                                    marginBottom: "50px",
+                                }}
+                                option={data}
+                            />
+                            <Title>Valores máximo e mínimo de cada série</Title>
+                            <DenseTable serie1={serie1} serie2={serie2} serie3={serie3} names={name} />
+                            <Fab
+                                variant="extended"
+                                component="span"
+                                size="small"
+                                style={{
+                                    textTransform: "none",
+                                    background: "#3B2659",
+                                    color: "#fff",
+                                    marginTop: "30px",
+                                }}
+                                onClick={() => window.location.reload()}
+                            >
+                                <Update style={{ marginRight: "5px", color: "#fff" }} />
+                                Carregar novo arquivo .csv
+                            </Fab>
+                        </Graphs>
+                    )}
+                </>
+            )}
+        </Box>
     );
-}
+};
 
 export default UploadTimeSeries;
